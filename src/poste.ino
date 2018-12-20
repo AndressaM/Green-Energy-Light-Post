@@ -1,8 +1,7 @@
-
 #include <Wire.h>
 #include "RTClib.h"  // Credit: Adafruit
 #include <NTPClient.h>
-#include <ESP8266WiFi.h>
+#include "ESP8266WiFi.h"
 #include <WiFiUdp.h>
 
 const char *ssid     = "UFAL";
@@ -30,7 +29,12 @@ int ano = 0;
 int hora =0;
 int  minuto = 0;
 int segundo =0;
+void forceUpdate(void) {
+  Serial.println(timeClient.getDay());
+  timeClient.forceUpdate();
+  Serial.println(timeClient.getDay());
 
+}
 void setup(){
   Serial.begin(115200);
 
@@ -64,21 +68,18 @@ void setup(){
   forceUpdate();
 
   //RTC.adjust(DateTime(__DATE__, __TIME__));
+
+
+
 /*  if (now.unixtime() < compiled.unixtime()) {
     //Serial.println("RTC is older than compile time! Updating");
     RTC.adjust(DateTime(__DATE__, __TIME__));
-
   }*/
 
 
 }
 
-void forceUpdate(void) {
-  Serial.println(timeClient.getDay());
-  timeClient.forceUpdate();
-  Serial.println(timeClient.getDay());
 
-}
 
 void checkOST(void) {
 
@@ -164,9 +165,9 @@ void printTime(){
      minuto = now.minute();
      segundo = now.second();
 
-    Serial.print(' ');
+    //Serial.print(' ');
     Serial.print(dia);
-    Serial.print(" - ");
+    Serial.print("/");
     Serial.print(mes);
     Serial.print('/');
     Serial.print(ano);
