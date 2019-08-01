@@ -3,9 +3,15 @@
 #include <NTPClient.h>
 #include "ESP8266WiFi.h"
 #include <WiFiUdp.h>
+#include <math.h> 
+
+//BH1750 IIC Mode
+
+int BH1750address = 0x23; //setting i2c address
+byte buff[2];
 
 const char *ssid     = "UFAL";
-const char *password = "";
+const char *password = NULL;
 
 
 int rele = 16;
@@ -29,6 +35,7 @@ int ano = 0;
 int hora =0;
 int  minuto = 0;
 int segundo =0;
+
 void forceUpdate(void) {
   Serial.println(timeClient.getDay());
   timeClient.forceUpdate();
@@ -42,7 +49,7 @@ void setup(){
 
   while ( WiFi.status() != WL_CONNECTED ) {
     delay ( 500 );
-    Serial.print ( "." );
+    Serial.print ( "Não conectou" );
   }
 
   timeClient.begin();
@@ -52,6 +59,7 @@ void setup(){
 
  pinMode(rele, OUTPUT);
  pinMode(rele2, OUTPUT);
+ 
   // Instantiate the RTC
   Wire.begin();
   RTC.begin();
@@ -67,13 +75,17 @@ void setup(){
   DateTime compiled = DateTime(__DATE__, __TIME__);
   forceUpdate();
 
-  //RTC.adjust(DateTime(__DATE__, __TIME__));
+  //RTC.adjust(DateTime(_DATE, __TIME_));
+
+  //Instantiate the Sensor Ligth
+
+  
 
 
 
 /*  if (now.unixtime() < compiled.unixtime()) {
     //Serial.println("RTC is older than compile time! Updating");
-    RTC.adjust(DateTime(__DATE__, __TIME__));
+    RTC.adjust(DateTime(_DATE, __TIME_));
   }*/
 
 
@@ -125,22 +137,42 @@ void loop() {
 
 
 
-    printTime();
+  printTime();
+  
+  //Controle de acionamento da lâmpada através da hora do sistema e do sensor de luz.
 
-  if (hora>=18 && hora <21)
+  uint16_t val=0;
+  BH1750_Init(BH1750address);
+  delay(200);
+ 
+  if(2==BH1750_Read(BH1750address))
+  {
+     val=((buff[0]<<8)|buff[1])/1.2;
+     Serial.print(val,DEC);     
+     Serial.println("[lx]"); 
+  }
+  delay(100);
+  
+  if ((hora>=18 && hora <21) || val <= 60)
 
   {
     digitalWrite(rele, HIGH);
+    Serial.print("Ligando a Lâmpada.\n");
 
   }
   else
   {
    digitalWrite(rele, LOW);
   }
-  if (hora>=10 && hora <16)
+
+  //Acionamento do cooler
+  
+  if (hora>=9 && hora <16)
 
   {
     digitalWrite(rele2, HIGH);
+    Serial.print("Ligando o coller.\n");
+ 
 
   }
   else
@@ -149,14 +181,13 @@ void loop() {
   }
 
 
-
-
   checkOST();
   delay (1000);
 }
 
 void printTime(){
-    DateTime now = RTC.now();//Recuperando a data e hora atual
+    DateTime now = RTC.now();
+    //Recuperando a data e hora atual
 
      dia = now.day();
      mes = now.month();
@@ -179,7 +210,26 @@ void printTime(){
     Serial.print(segundo);
     Serial.println(' ');
 
+}
 
-
-
+ 
+int BH1750_Read(int address)
+{
+   int i=0;
+   Wire.beginTransmission(address);
+   Wire.requestFrom(address, 2);
+   while(Wire.available()) 
+   {
+      buff[i] = Wire.read();  // receive one byte
+      i++;
+   }
+   Wire.endTransmission();  
+   return i;
+}
+ 
+void BH1750_Init(int address) 
+{
+   Wire.beginTransmission(address);
+   Wire.write(0x10); //1lx reolution 120ms
+   Wire.endTransmission();
 }
