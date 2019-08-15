@@ -13,10 +13,11 @@ byte buff[2];
 const char *ssid     = "UFAL";
 const char *password = NULL;
 
-
+int off_hour = 21;
+int off_minute = 0;
 int rele = 16;
 int rele2 = 13;
-
+int lamp_on = 0;
 
 RTC_DS1307 RTC;
 
@@ -135,13 +136,9 @@ void checkOST(void) {
 
 void loop() {
 
-
-
   printTime();
-  
   //Controle de acionamento da lâmpada através da hora do sistema e do sensor de luz.
-
-  uint16_t val=0;
+  uint16_t val=120;
   BH1750_Init(BH1750address);
   delay(200);
  
@@ -151,10 +148,25 @@ void loop() {
      Serial.print(val,DEC);     
      Serial.println("[lx]"); 
   }
-  delay(100);
-  
-  if ((hora>=18 && hora <21) || val <= 60)
+  delay(150);
 
+  if (hora == 17 && minuto == 0)
+  {
+    lamp_on = 0;
+  }
+  if (val <= 60 && lamp_on == 0)
+  {
+    off_hour = hora+4;
+    off_minute = minuto;
+    Serial.print("Desligando às");
+    Serial.print(off_hour);
+    Serial.print(":");
+    Serial.print(off_minute);
+    Serial.print("\n");
+    lamp_on = 1;
+  }
+  
+  if (lamp_on == 1 && (hora < off_hour || ( hora == off_hour && minuto < off_minute)))
   {
     digitalWrite(rele, HIGH);
     Serial.print("Ligando a Lâmpada.\n");
@@ -163,6 +175,7 @@ void loop() {
   else
   {
    digitalWrite(rele, LOW);
+   Serial.print("Lâmpada desligada\n");
   }
 
   //Acionamento do cooler
@@ -181,13 +194,14 @@ void loop() {
   }
 
 
+
+
   checkOST();
   delay (1000);
 }
 
 void printTime(){
-    DateTime now = RTC.now();
-    //Recuperando a data e hora atual
+    DateTime now = RTC.now();//Recuperando a data e hora atual
 
      dia = now.day();
      mes = now.month();
