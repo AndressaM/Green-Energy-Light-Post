@@ -18,6 +18,9 @@ int off_minute = 0;
 int rele = 16;
 int rele2 = 13;
 int lamp_on = 0;
+int verification = 0;
+int verif_minute = 0;
+int its_dark = 0;
 
 RTC_DS1307 RTC;
 
@@ -139,7 +142,6 @@ void loop() {
   printTime();
   //Controle de acionamento da lâmpada através da hora do sistema e do sensor de luz.
   uint16_t val=120;
-  int its_dark = 0;
   BH1750_Init(BH1750address);
   delay(200);
  
@@ -155,28 +157,21 @@ void loop() {
   {
     lamp_on = 0;
   }
-  if (val <= 60 && lamp_on == 0)
+  if (val <= 60 && lamp_on == 0 && verification == 0)
   {
-    int expire_min = (minuto+5)%60;
-    while(minuto != expire_min)
-    {
-      if(2==BH1750_Read(BH1750address))
-      {
-        val=((buff[0]<<8)|buff[1])/1.2;
-        Serial.print(val,DEC);     
-        Serial.println("[lx]"); 
-      }
-      delay(150);
+    verif_minute = (minuto+5)%60;
+    verification = 1;
+  }
 
-      if(val > 60)
-      {
-        its_dark = 0;
-        break; 
-      }
-      else
-      {
-        its_dark = 1;
-      }
+  if (verification == 1)
+  {
+    if(minuto == verify_minute && val <= 60)
+    {
+      its_dark = 1;
+    }
+    else if(val > 60)
+    {
+      verification = 0;
     }
   }
 
@@ -190,6 +185,7 @@ void loop() {
     Serial.print(off_minute);
     Serial.print("\n");
     lamp_on = 1;
+    verification = 0;
   }
   
   if (lamp_on == 1 && (hora < off_hour || ( hora == off_hour && minuto < off_minute)))
