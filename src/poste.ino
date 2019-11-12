@@ -36,6 +36,7 @@ int ano = 0;
 int hora =0;
 int  minuto = 0;
 int segundo =0;
+int verificar = 0;
 
 void forceUpdate(void) {
   Serial.println(timeClient.getDay());
@@ -156,14 +157,26 @@ void loop() {
   }
   if (val <= 60 && lamp_on == 0)
   {
-    off_hour = hora+4;
-    off_minute = minuto;
-    Serial.print("Desligando às");
-    Serial.print(off_hour);
-    Serial.print(":");
-    Serial.print(off_minute);
-    Serial.print("\n");
-    lamp_on = 1;
+    verificar ++;
+    Serial.print("Verificar:");
+    Serial.print(verificar);
+    if(verificar == 5*60)
+    {
+      off_hour = hora+4;
+      off_minute = minuto;
+      Serial.print("Desligando às");
+      Serial.print(off_hour);
+      Serial.print(":");
+      Serial.print(off_minute);
+      Serial.print("\n");
+      lamp_on = 1;
+      verificar = 0;
+    }
+    
+  }
+  else 
+  {
+    verificar = 0;
   }
   
   if (lamp_on == 1 && (hora < off_hour || ( hora == off_hour && minuto < off_minute)))
@@ -192,9 +205,6 @@ void loop() {
   {
    digitalWrite(rele2, LOW);
   }
-
-
-
 
   checkOST();
   delay (1000);
